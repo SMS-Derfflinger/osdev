@@ -8,6 +8,7 @@ use crate::{
         cpu::CPU,
         fdt::{init_dtb_and_fdt, FdtExt},
         mm::{ArchPhysAccess, FreeRam, PageAttribute64, GLOBAL_PAGE_TABLE},
+        time::set_next_timer,
     },
     bootstrap::BootStrapData,
     mm::{ArchMemory, ArchPagingMode, BasicPageAlloc, BasicPageAllocRef, ScopedAllocator},
@@ -221,6 +222,9 @@ fn setup_cpu(alloc: impl PageAlloc, hart_id: usize) {
             .as_mut()
             .set_kernel_tp(PercpuArea::get_for(cpu.cpuid()).unwrap().cast());
     }
+
+    // set current hart's mtimecmp register
+    set_next_timer();
 }
 
 /// TODO

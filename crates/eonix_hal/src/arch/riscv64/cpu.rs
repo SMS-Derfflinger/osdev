@@ -2,7 +2,7 @@ use super::{
     interrupt::InterruptControl,
     trap::{setup_trap, TRAP_SCRATCH},
 };
-use crate::arch::fdt::{FdtExt, FDT};
+use crate::arch::{fdt::{FdtExt, FDT}, time::set_next_timer};
 use core::{pin::Pin, ptr::NonNull};
 use eonix_preempt::PreemptGuard;
 use eonix_sync_base::LazyLock;
@@ -80,7 +80,7 @@ impl CPU {
     }
 
     pub fn end_of_interrupt(self: Pin<&mut Self>) {
-        todo!()
+        set_next_timer();
     }
 
     pub fn local() -> PreemptGuard<Pin<&'static mut Self>> {
