@@ -6,7 +6,10 @@ use core::arch::{global_asm, naked_asm};
 use core::mem::{offset_of, size_of};
 use core::num::NonZero;
 use core::ptr::NonNull;
-use eonix_hal_traits::{context::RawTaskContext, trap::TrapReturn};
+use eonix_hal_traits::{
+    context::RawTaskContext,
+    trap::{IrqState as IrqStateTrait, TrapReturn},
+};
 use riscv::register::sie::Sie;
 use riscv::register::stvec::TrapMode;
 use riscv::register::{scause, sepc, stval};
@@ -50,12 +53,15 @@ unsafe extern "C" fn _raw_trap_entry() -> ! {
         "sd    t1, 0(t0)",
         "sd    t2, 8(t0)",
         "csrr  t1, sstatus",
-        "andi  t1, t1, 0x10",
+        "andi  t1, t1, 0x100",
         "beqz  t1, 2f",
         // else SPP = 1, supervisor mode
         "addi  t1, sp, -{trap_context_size}",
         "mv    t2, tp",
-        "j     3f",
+        "sd    ra, {ra}(t1)",
+        "sd    sp, {sp}(t1)",
+        "mv    sp, t1",
+        "j     4f",
         // SPP = 0, user mode
         "2:",
         "ld    t1, 24(t0)", // Load captured TrapContext address
@@ -65,6 +71,7 @@ unsafe extern "C" fn _raw_trap_entry() -> ! {
         "3:",
         "sd    ra, {ra}(t1)",
         "sd    sp, {sp}(t1)",
+        "4:",
         "sd    gp, {gp}(t1)",
         "sd    t2, {tp}(t1)",
         "ld    ra, 0(t0)",
@@ -72,7 +79,7 @@ unsafe extern "C" fn _raw_trap_entry() -> ! {
         "sd    ra, {t1}(t1)",     // Save t1
         "sd    t2, {t2}(t1)",     // Save t2
         "ld    ra, 32(t0)",       // Load handler address
-        "csrrw t2, sscratch, t0", // Swap to and sscratch
+        "csrrw t2, sscratch, t0", // Swap t0 and sscratch
         "sd    t2, {t0}(t1)",
         "sd    a0, {a0}(t1)",
         "sd    a1, {a1}(t1)",
@@ -277,9 +284,10 @@ impl IrqState {
     pub fn save() -> Self {
         IrqState(sie::read())
     }
+}
 
-    #[inline]
-    pub fn restore(self) {
+impl IrqStateTrait for IrqState {
+    fn restore(self) {
         let Self(state) = self;
         unsafe {
             sie::write(state);
