@@ -28,7 +28,7 @@ use eonix_mm::{
 };
 use eonix_percpu::PercpuArea;
 use fdt::Fdt;
-use riscv::{asm::sfence_vma_all, register::satp};
+use riscv::{asm::sfence_vma_all, register::{satp, sie, sstatus}};
 use sbi::legacy::console_putchar;
 
 #[unsafe(link_section = ".bootstrap.stack")]
@@ -131,6 +131,12 @@ pub unsafe extern "C" fn riscv64_start(hart_id: usize, dtb_addr: PAddr) -> ! {
     };
 
     unsafe {
+        sie::set_stimer();
+    };
+    // set current hart's mtimecmp register
+    set_next_timer();
+
+    unsafe {
         _eonix_hal_main(bootstrap_data);
     }
 }
@@ -222,9 +228,6 @@ fn setup_cpu(alloc: impl PageAlloc, hart_id: usize) {
             .as_mut()
             .set_kernel_tp(PercpuArea::get_for(cpu.cpuid()).unwrap().cast());
     }
-
-    // set current hart's mtimecmp register
-    set_next_timer();
 }
 
 /// TODO

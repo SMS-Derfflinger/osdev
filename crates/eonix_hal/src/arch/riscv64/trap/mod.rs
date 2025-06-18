@@ -11,8 +11,9 @@ use eonix_hal_traits::{
     trap::{IrqState as IrqStateTrait, TrapReturn},
 };
 use riscv::register::sie::Sie;
+use riscv::register::sstatus::Sstatus;
 use riscv::register::stvec::TrapMode;
-use riscv::register::{scause, sepc, stval};
+use riscv::register::{scause, sepc, sstatus, stval};
 use riscv::{
     asm::sfence_vma_all,
     register::{
@@ -277,12 +278,12 @@ pub fn setup_trap() {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct IrqState(Sie);
+pub struct IrqState(Sstatus);
 
 impl IrqState {
     #[inline]
     pub fn save() -> Self {
-        IrqState(sie::read())
+        IrqState(sstatus::read())
     }
 }
 
@@ -290,7 +291,7 @@ impl IrqStateTrait for IrqState {
     fn restore(self) {
         let Self(state) = self;
         unsafe {
-            sie::write(state);
+            sstatus::write(state);
         }
     }
 }
@@ -298,18 +299,14 @@ impl IrqStateTrait for IrqState {
 #[inline]
 pub fn disable_irqs() {
     unsafe {
-        sie::clear_sext();
-        sie::clear_stimer();
-        sie::clear_ssoft();
+        sstatus::clear_sie();
     }
 }
 
 #[inline]
 pub fn enable_irqs() {
     unsafe {
-        sie::set_sext();
-        sie::set_stimer();
-        sie::set_ssoft();
+        sstatus::clear_sie();
     }
 }
 
