@@ -28,7 +28,7 @@ use eonix_mm::{
 };
 use eonix_percpu::PercpuArea;
 use fdt::Fdt;
-use riscv::{asm::sfence_vma_all, register::{satp, sie, sstatus}};
+use riscv::{asm::sfence_vma_all, register::{satp, sie}};
 use sbi::legacy::console_putchar;
 
 #[unsafe(link_section = ".bootstrap.stack")]

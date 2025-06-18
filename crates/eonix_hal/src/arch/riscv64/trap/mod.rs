@@ -306,7 +306,7 @@ pub fn disable_irqs() {
 #[inline]
 pub fn enable_irqs() {
     unsafe {
-        sstatus::clear_sie();
+        sstatus::set_sie();
     }
 }
 
