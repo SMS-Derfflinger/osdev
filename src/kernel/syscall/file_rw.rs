@@ -575,12 +575,7 @@ fn writev(fd: FD, iov_user: *const IoVec, iovcnt: u32) -> KResult<usize> {
 
 #[eonix_macros::define_syscall(SYS_FACCESSAT)]
 fn faccessat(dirfd: FD, pathname: *const u8, _mode: u32, flags: AtFlags) -> KResult<()> {
-    let dentry = if flags.at_empty_path() {
-        let file = thread.files.get(dirfd).ok_or(EBADF)?;
-        file.as_path().ok_or(EBADF)?.clone()
-    } else {
-        dentry_from(thread, dirfd, pathname, !flags.no_follow())?
-    };
+    let dentry = dentry_from(thread, dirfd, pathname, !flags.no_follow())?;
 
     if !dentry.is_valid() {
         return Err(ENOENT);

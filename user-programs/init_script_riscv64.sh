@@ -47,6 +47,9 @@ if dd if=/dev/vdb of=/dev/null bs=512 count=1; then
     echo -n -e "Mounting the ext4 image... " >&2
     do_or_freeze mkdir -p /mnt1
     do_or_freeze mount -t ext4 /dev/vdb /mnt1
+    mkdir -p test/usr/bin
+    ln -s /mnt1/glibc/usr/bin/git ./test/usr/bin
+    ln -s /mnt1/musl/README.md ./test
     echo ok >&2
 fi
 
